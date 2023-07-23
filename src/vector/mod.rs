@@ -1,30 +1,74 @@
 use std::fmt;
-use std::ops;
-use std::ops::{Index, IndexMut};
-use std::ops::Add;
-use std::ops::Mul;
-use std::ops::Sub;
+use std::fmt::{Debug, Display};
+use std::ops::{AddAssign, Index, IndexMut, MulAssign, SubAssign};
 
 #[derive(Clone, Debug)]
 pub struct Vector<K> {
     pub elements: Vec<K>,
 }
 
-// impl<K: fmt::Debug> fmt::Debug for Vector<K> {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         writeln!(f, "{:#?}", self.elements)
-//     }
-// }
+impl<K> Vector<K> {
+    pub fn size(&self) -> usize {
+        self.elements.len()
+    }
 
-impl<K: fmt::Debug> fmt::Display for Vector<K> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.elements)
+    pub fn add(&mut self, v: &Vector<K>)
+        where
+            K: AddAssign + Copy,
+    {
+        assert_eq!(self.elements.len(), v.elements.len());
+        self.elements
+            .iter_mut()
+            .zip(v.elements.iter())
+            .for_each(|(a, b)| *a += *b);
+    }
+
+    pub fn sub(&mut self, v: &Vector<K>)
+        where
+            K: SubAssign + Copy,
+    {
+        assert_eq!(self.elements.len(), v.elements.len());
+        self.elements
+            .iter_mut()
+            .zip(v.elements.iter())
+            .for_each(|(a, b)| *a -= *b);
+    }
+
+    pub fn scl(&mut self, a: K)
+        where
+            K: MulAssign + Copy,
+    {
+        self.elements.iter_mut().for_each(|x| *x *= a);
+    }
+
+    pub fn display(&self)
+        where
+            K: Debug,
+    {
+        println!("{:?}", self.elements);
     }
 }
 
-impl<K: ops::Sub> From<Vec<K>> for Vector<K> {
+impl<K: Clone> From<Vec<K>> for Vector<K> {
     fn from(vec: Vec<K>) -> Self {
         Vector { elements: vec }
+    }
+}
+
+impl<K> Vector<K> {
+    pub fn from(array: &[K]) -> Self
+        where
+            K: Clone,
+    {
+        Self {
+            elements: Vec::from(array),
+        }
+    }
+}
+
+impl<K: Debug> Display for Vector<K> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.elements)
     }
 }
 
@@ -43,72 +87,31 @@ impl<K> IndexMut<usize> for Vector<K> {
 }
 
 
-impl<K> Vector<K>
-{
-    pub fn new(elements: Vec<K>) -> Vector<K> {
-        Self { elements }
-    }
-
-    pub fn from(array: &[K]) -> Vector<K>
-        where K: Clone
-    {
-        Vector { elements: Vec::from(array) }
-    }
-
-    pub fn size(&self) -> usize {
-        self.elements.len()
-    }
-
-    pub fn display(&self)
-        where K: fmt::Debug
-    {
-        for ele in self.elements.iter() {
-            println!("[{:?}]", ele);
-        }
-    }
-
-    pub fn add(&mut self, v: &Self)
-        where K: Add<Output=K> + Copy
-    {
-        assert_eq!(self.elements.len(), v.elements.len());
-
-        for (a, b) in self.elements.iter_mut().zip(v.elements.iter()) {
-            *a = *a + *b;
-        }
-    }
-
-    pub fn sub(&mut self, v: &Self)
-        where K: Sub<Output=K> + Copy
-    {
-        assert_eq!(self.elements.len(), v.elements.len());
-
-        for (a, b) in self.elements.iter_mut().zip(v.elements.iter()) {
-            *a = *a - *b;
-        }
-    }
-
-    pub fn scl(&mut self, a: K)
-        where K: Mul<Output=K> + Copy
-    {
-        for x in self.elements.iter_mut() {
-            *x = *x * a;
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
+    fn vector_util() {
+        let vec = vec![1, 2, 3];
+        let u: Vector<_> = vec.into(); // From<Vec<K>>
+
+        let arr = &[1, 2, 3];
+        let v = Vector::from(arr); // from(&[K])
+
+        u.display();
+        println!("{}", u); // [2.0, 3.0]
+        println!("{:?}", u); // Vector { elements: [2.0, 3.0] }
+
+        v.display();
+        println!("{}", u); // [2.0, 3.0]
+        println!("{:?}", u); // Vector { elements: [2.0, 3.0] }
+    }
+
+    #[test]
     fn vector_add() {
         let mut u = Vector::from(&[2., 3.]);
         let v = Vector::from(&[5., 7.]);
-        u.display();
-        // [2.0]
-        // [3.0]
-        println!("{}", u); // [2.0, 3.0]
-        println!("{:?}", u); // Vector { elements: [2.0, 3.0] }
 
         u.add(&v);
         assert_eq!(vec![7.0, 10.0], u.elements);

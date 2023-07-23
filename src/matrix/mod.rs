@@ -1,84 +1,70 @@
-use std::{fmt, ops};
-use std::ops::{Add, Index, IndexMut, Sub};
+use std::fmt;
+use std::fmt::{Debug, Display};
+use std::ops::{AddAssign, Index, IndexMut, MulAssign, SubAssign};
 
-use crate::vector::*;
+use crate::vector::Vector;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Matrix<K> {
     pub cols: Vector<Vector<K>>,
 }
 
-impl<K, const N1: usize, const N2: usize> From<&[[K; N2]; N1]> for Matrix<K>
-    where K: Clone + Copy
+impl<K> Matrix<K>
+    where
+        K: AddAssign + SubAssign + MulAssign + Copy,
 {
-    fn from(array2d: &[[K; N2]; N1]) -> Matrix<K> {
-        let mut vec2d = Vec::<Vector<K>>::new();
+    pub fn shape(&self) -> (usize, usize) {
+        (self.cols.size(), self.cols.elements.first().map_or(0, Vector::size))
+    }
 
-        for &col_slice in array2d.iter() {
-            vec2d.push(Vector::from(&col_slice));
-        }
+    pub fn add(&mut self, other: &Matrix<K>) {
+        assert_eq!(self.shape(), other.shape());
+        self.cols.elements.iter_mut().zip(&other.cols.elements).for_each(|(a, b)| a.add(b));
+    }
 
+    pub fn sub(&mut self, other: &Matrix<K>) {
+        assert_eq!(self.shape(), other.shape());
+        self.cols.elements.iter_mut().zip(&other.cols.elements).for_each(|(a, b)| a.sub(b));
+    }
+
+    pub fn scl(&mut self, a: K) {
+        self.cols.elements.iter_mut().for_each(|col| col.scl(a));
+    }
+
+    pub fn display(&self)
+        where
+            K: Debug,
+    {
+        println!("{}", self);
+    }
+}
+
+
+impl<K> From<Vec<Vec<K>>> for Matrix<K>
+    where
+        K: Copy + Clone,
+{
+    fn from(array2d: Vec<Vec<K>>) -> Self {
+        let vec2d: Vec<Vector<K>> = array2d.into_iter().map(|v| Vector::from(v.as_slice())).collect();
         Matrix { cols: Vector::from(&vec2d) }
     }
 }
 
-impl<K> Matrix<K>
-    where K: ops::Add<Output=K> + ops::Sub<Output=K> + ops::Mul<Output=K> + Copy
+
+impl<K, const N1: usize, const N2: usize> From<&[[K; N1]; N2]> for Matrix<K>
+    where
+        K: Copy + Clone,
 {
-    // pub fn from(array2d: &[[K]]) -> Matrix<K>
-    // {
-    //     let mut vec2d = Vec::<Vector<K>>::new();
-    //
-    //     for &col_slice in array2d.iter() {
-    //         vec2d.push(Vector::from(col_slice));
-    //     }
-    //
-    //     Matrix { cols: Vector::from(&vec2d) }
-    // }
-
-    pub fn shape(&self) -> (usize, usize) {
-        (self.cols.size(), self.cols.elements.first().expect("Empty").size())
-    }
-
-    pub fn display(&self)
-        where K: fmt::Debug
-    {
-        let mut buffer = String::new();
-        for col in self.cols.elements.iter() {
-            buffer.push_str(&format!("{}\n", col));
-        }
-        println!("{}", buffer);
-    }
-
-    fn add(&mut self, v: &Self)
-    {
-        assert_eq!(self.shape(), v.shape());
-
-        for (a, b) in self.cols.elements.iter_mut().zip(&v.cols.elements) {
-            a.add(b);
-        }
-    }
-
-    fn sub(&mut self, v: &Self)
-    {
-        assert_eq!(self.shape(), v.shape());
-
-        for (a, b) in self.cols.elements.iter_mut().zip(&v.cols.elements) {
-            a.sub(b);
-        }
-    }
-
-    fn scl(&mut self, a: K)
-    {
-        for col in &mut self.cols.elements {
-            col.scl(a);
-        }
+    fn from(array2d: &[[K; N1]; N2]) -> Self {
+        let vec2d: Vec<Vector<K>> = array2d.iter().map(|&col_slice| col_slice.to_vec().into()).collect();
+        Matrix { cols: vec2d.into() }
     }
 }
 
-impl<K: fmt::Debug> fmt::Display for Matrix<K> {
+impl<K: Debug> Display for Matrix<K> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.cols)
+        let buffer: String = self.cols.elements.iter().map(|col| format!("{}\n", col)).collect();
+        write!(f, "{}", buffer)
     }
 }
 
@@ -86,13 +72,13 @@ impl<K> Index<usize> for Matrix<K> {
     type Output = Vector<K>;
 
     fn index(&self, index: usize) -> &Self::Output {
-        &self.cols.elements[index]
+        &self.cols[index]
     }
 }
 
 impl<K> IndexMut<usize> for Matrix<K> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.cols.elements[index]
+        &mut self.cols[index]
     }
 }
 
@@ -106,11 +92,11 @@ mod tests {
         let v = Matrix::from(&[[7., 4.], [-2., 2.]]);
 
         u.display();
-        // println!("{}", u);
-        // println!("{:?}", u);
-        // println!("{:#?}", u);
+        println!("{}", u);
+        println!("{:?}", u);
+        println!("{:#?}", u);
 
-        v.display();
+        // v.display();
         // println!("{}", v);
         // println!("{:?}", u);
         // println!("{:#?}", v);
