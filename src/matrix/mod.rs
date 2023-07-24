@@ -10,24 +10,28 @@ pub struct Matrix<K> {
 }
 
 impl<K> Matrix<K>
-    where
-        K: AddAssign + SubAssign + MulAssign + Copy,
 {
     pub fn shape(&self) -> (usize, usize) {
         (self.cols.size(), self.cols.elements.first().map_or(0, Vector::size))
     }
 
-    pub fn add(&mut self, other: &Matrix<K>) {
+    pub fn add(&mut self, other: &Matrix<K>)
+        where K: AddAssign + Copy
+    {
         assert_eq!(self.shape(), other.shape());
         self.cols.elements.iter_mut().zip(&other.cols.elements).for_each(|(a, b)| a.add(b));
     }
 
-    pub fn sub(&mut self, other: &Matrix<K>) {
+    pub fn sub(&mut self, other: &Matrix<K>)
+        where K: SubAssign + Copy
+    {
         assert_eq!(self.shape(), other.shape());
         self.cols.elements.iter_mut().zip(&other.cols.elements).for_each(|(a, b)| a.sub(b));
     }
 
-    pub fn scl(&mut self, a: K) {
+    pub fn scl(&mut self, a: K)
+        where K: MulAssign + Copy
+    {
         self.cols.elements.iter_mut().for_each(|col| col.scl(a));
     }
 

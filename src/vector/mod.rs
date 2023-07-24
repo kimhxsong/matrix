@@ -8,6 +8,10 @@ pub struct Vector<K> {
 }
 
 impl<K> Vector<K> {
+    pub fn new() -> Self {
+        Vector { elements: Vec::new() }
+    }
+
     pub fn size(&self) -> usize {
         self.elements.len()
     }
