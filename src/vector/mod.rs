@@ -1,95 +1,166 @@
-use std::fmt;
-use std::fmt::{Debug, Display};
-use std::ops::{AddAssign, Index, IndexMut, MulAssign, SubAssign};
+// use core::ops;
+use std::{
+    fmt::Debug,
+    ops::{AddAssign, MulAssign, SubAssign},
+};
 
 #[derive(Clone, Debug)]
 pub struct Vector<K> {
-    pub elements: Vec<K>,
+    pub e: Vec<K>,
+}
+
+impl<K: std::ops::Deref> std::ops::Deref for Vector<K> {
+    type Target = Vec<K>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.e
+    }
+}
+
+impl<K> AddAssign<Vector<K>> for Vector<K>
+where
+    K: AddAssign + Copy,
+{
+    fn add_assign(&mut self, rhs: Vector<K>) {
+        self.e
+            .iter_mut()
+            .zip(rhs.e.iter())
+            .for_each(|(a, b)| *a += *b);
+    }
+}
+
+impl<K> SubAssign<Vector<K>> for Vector<K>
+where
+    K: SubAssign + Copy,
+{
+    fn sub_assign(&mut self, rhs: Vector<K>) {
+        self.e
+            .iter_mut()
+            .zip(rhs.e.iter())
+            .for_each(|(a, b)| *a -= *b);
+    }
+}
+
+impl<K> MulAssign<K> for Vector<K>
+where
+    K: MulAssign + Copy,
+{
+    fn mul_assign(&mut self, rhs: K) {
+        let lambda = K::from(rhs);
+        self.e.iter_mut().for_each(|e| *e *= lambda);
+    }
+}
+
+impl<K> AddAssign<&Vector<K>> for Vector<K>
+where
+    K: AddAssign + Copy,
+{
+    fn add_assign(&mut self, rhs: &Vector<K>) {
+        self.e
+            .iter_mut()
+            .zip(rhs.e.iter())
+            .for_each(|(a, b)| *a += *b);
+    }
+}
+
+impl<K> SubAssign<&Vector<K>> for Vector<K>
+where
+    K: SubAssign + Copy,
+{
+    fn sub_assign(&mut self, rhs: &Vector<K>) {
+        self.e
+            .iter_mut()
+            .zip(rhs.e.iter())
+            .for_each(|(a, b)| *a -= *b);
+    }
+}
+
+impl<K> MulAssign<&K> for Vector<K>
+where
+    K: MulAssign + Copy,
+{
+    fn mul_assign(&mut self, rhs: &K) {
+        self.e.iter_mut().for_each(|e| *e *= *rhs);
+    }
 }
 
 impl<K> Vector<K> {
-    pub fn new() -> Self {
-        Vector { elements: Vec::new() }
-    }
-
-    pub fn size(&self) -> usize {
-        self.elements.len()
-    }
-
-    pub fn add(&mut self, v: &Vector<K>)
-        where
-            K: AddAssign + Copy,
-    {
-        assert_eq!(self.elements.len(), v.elements.len());
-        self.elements
-            .iter_mut()
-            .zip(v.elements.iter())
-            .for_each(|(a, b)| *a += *b);
-    }
-
-    pub fn sub(&mut self, v: &Vector<K>)
-        where
-            K: SubAssign + Copy,
-    {
-        assert_eq!(self.elements.len(), v.elements.len());
-        self.elements
-            .iter_mut()
-            .zip(v.elements.iter())
-            .for_each(|(a, b)| *a -= *b);
-    }
-
-    pub fn scl(&mut self, a: K)
-        where
-            K: MulAssign + Copy,
-    {
-        self.elements.iter_mut().for_each(|x| *x *= a);
+    pub fn new(e: Vec<K>) -> Self {
+        Self { e }
     }
 
     pub fn display(&self)
-        where
-            K: Debug,
+    where
+        K: Debug,
     {
-        println!("{:?}", self.elements);
+        println!("{:?}", self.e);
+    }
+
+    // getter
+    pub fn e(&self) -> &[K] {
+        self.e.as_ref()
+    }
+
+    // mut getter
+    pub fn set_e(&mut self, e: Vec<K>) {
+        self.e = e;
+    }
+
+    // mut setter
+    pub fn e_mut(&mut self) -> &mut Vec<K> {
+        &mut self.e
+    }
+
+    pub fn size(&self) -> usize {
+        self.e.len()
+    }
+
+    pub fn add(&mut self, v: &Vector<K>)
+    where
+        K: AddAssign + Copy,
+    {
+        *self += v;
+    }
+
+    pub fn sub(&mut self, v: &Vector<K>)
+    where
+        K: SubAssign + Copy,
+    {
+        *self -= v;
+    }
+
+    pub fn scl(&mut self, a: K)
+    where
+        K: MulAssign + Copy,
+    {
+        *self *= &a;
     }
 }
 
-impl<K: Clone> From<Vec<K>> for Vector<K> {
-    fn from(vec: Vec<K>) -> Self {
-        Vector { elements: vec }
+impl<K> From<Vec<K>> for Vector<K> {
+    fn from(value: Vec<K>) -> Self {
+        Self { e: value }
     }
 }
 
-impl<K> Vector<K> {
-    pub fn from(array: &[K]) -> Self
-        where
-            K: Clone,
-    {
+impl<K, const N: usize> From<[K; N]> for Vector<K> {
+    fn from(value: [K; N]) -> Self {
         Self {
-            elements: Vec::from(array),
+            e: Vec::from(value),
         }
     }
 }
 
-impl<K: Debug> Display for Vector<K> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.elements)
+impl<K> From<&[K]> for Vector<K>
+where
+    K: Copy,
+{
+    fn from(value: &[K]) -> Self {
+        Self {
+            e: Vec::from(value),
+        }
     }
 }
-
-impl<K> Index<usize> for Vector<K> {
-    type Output = K;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.elements[index]
-    }
-}
-
-impl<K> IndexMut<usize> for Vector<K> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.elements[index]
-    }
-}
-
 
 #[cfg(test)]
 mod tests {
@@ -97,178 +168,107 @@ mod tests {
 
     #[test]
     fn vector_util() {
-        let vec = vec![1, 2, 3];
-        let u: Vector<_> = vec.into(); // From<Vec<K>>
-
-        let arr = &[1, 2, 3];
-        let v = Vector::from(arr); // from(&[K])
-
-        u.display();
-        println!("{}", u); // [2.0, 3.0]
-        println!("{:?}", u); // Vector { elements: [2.0, 3.0] }
-
+        let u = Vector::from([1., 2.]);
+        let v = Vector::from(vec![3., 4.]);
         v.display();
-        println!("{}", u); // [2.0, 3.0]
-        println!("{:?}", u); // Vector { elements: [2.0, 3.0] }
-    }
+        let x = Vector::from(v);
+        // v.display();  -- [ERROR] because what 'from()' does is shallow copying, 'clone' does deep copying
+        u.display();
+        x.display();
 
-    #[test]
-    fn vector_add() {
-        let mut u = Vector::from(&[2., 3.]);
-        let v = Vector::from(&[5., 7.]);
+        let mut y = Vector::clone(&x); // 기본적으로 정의되는 함수를 사용하고 싶다면 Struct에 Derived 에 원하는 Trait을 추가해주면 된다.
+        y.display();
 
-        u.add(&v);
-        assert_eq!(vec![7.0, 10.0], u.elements);
-
-        let mut u = Vector::from(&[0, 0]);
-        let v = Vector::from(&[0, 0]);
-        u.add(&v);
-        assert_eq!(vec![0, 0], u.elements);
-
-        let mut u = Vector::from(&[1, 0]);
-        let v = Vector::from(&[0, 1]);
-        u.add(&v);
-        assert_eq!(vec![1, 1], u.elements);
-
-        let mut u = Vector::from(&[1, 1]);
-        let v = Vector::from(&[1, 1]);
-        u.add(&v);
-        assert_eq!(vec![2, 2], u.elements);
-
-        let mut u = Vector::from(&[21, 21]);
-        let v = Vector::from(&[21, 21]);
-        u.add(&v);
-        assert_eq!(vec![42, 42], u.elements);
-
-        let mut u = Vector::from(&[-21, 21]);
-        let v = Vector::from(&[21, -21]);
-        u.add(&v);
-        assert_eq!(vec![0, 0], u.elements);
-
-        let mut u = Vector::from(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-        let v = Vector::from(&[9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
-        u.add(&v);
-        assert_eq!(vec![9, 9, 9, 9, 9, 9, 9, 9, 9, 9], u.elements);
-    }
-
-    #[test]
-    fn vector_sub() {
-        let mut u = Vector::from(&[2., 3.]);
-        let v = Vector::from(&[5., 7.]);
-        u.sub(&v);
-        assert_eq!(vec![-3.0, -4.0], u.elements);
-
-        let mut u = Vector::from(&[0, 0]);
-        let v = Vector::from(&[0, 0]);
-        u.sub(&v);
-        assert_eq!(vec![0, 0], u.elements);
-
-        let mut u = Vector::from(&[1, 0]);
-        let v = Vector::from(&[0, 1]);
-        u.sub(&v);
-        assert_eq!(vec![1, -1], u.elements);
-
-        let mut u = Vector::from(&[1, 1]);
-        let v = Vector::from(&[1, 1]);
-        u.sub(&v);
-        assert_eq!(vec![0, 0], u.elements);
-
-        let mut u = Vector::from(&[21, 21]);
-        let v = Vector::from(&[21, 21]);
-        u.sub(&v);
-        assert_eq!(vec![0, 0], u.elements);
-
-        let mut u = Vector::from(&[-21, 21]);
-        let v = Vector::from(&[21, -21]);
-        u.sub(&v);
-        assert_eq!(vec![-42, 42], u.elements);
-
-        let mut u = Vector::from(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-        let v = Vector::from(&[9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
-        u.sub(&v);
-        assert_eq!(vec![-9, -7, -5, -3, -1, 1, 3, 5, 7, 9], u.elements);
+        y += x;
+        y.display();
+        y -= u;
+        y.display();
+        // y *= &3.;
+        // y.display();
+        y *= 4.;
+        y.display();
     }
 
     #[test]
     fn vector_scale() {
-        let mut u = Vector::from(&[2., 3.]);
+        let mut u = Vector::from([2., 3.]);
         u.scl(2.);
-        assert_eq!(vec![4.0, 6.0], u.elements);
+        assert_eq!(vec![4.0, 6.0], u.e);
 
-        let mut u = Vector::from(&[0, 0]);
+        let mut u = Vector::from([0, 0]);
         u.scl(1);
-        assert_eq!(vec![0, 0], u.elements);
+        assert_eq!(vec![0, 0], u.e);
 
-        let mut u = Vector::from(&[1, 0]);
+        let mut u = Vector::from([1, 0]);
         u.scl(1);
-        assert_eq!(vec![1, 0], u.elements);
+        assert_eq!(vec![1, 0], u.e);
 
-        let mut u = Vector::from(&[1, 1]);
+        let mut u = Vector::from([1, 1]);
         u.scl(2);
-        assert_eq!(vec![2, 2], u.elements);
+        assert_eq!(vec![2, 2], u.e);
 
-        let mut u = Vector::from(&[21, 21]);
+        let mut u = Vector::from([21, 21]);
         u.scl(2);
-        assert_eq!(vec![42, 42], u.elements);
+        assert_eq!(vec![42, 42], u.e);
 
-        let mut u = Vector::from(&[42., 42.]);
+        let mut u = Vector::from([42., 42.]);
         u.scl(0.5);
-        assert_eq!(vec![21., 21.], u.elements);
+        assert_eq!(vec![21., 21.], u.e);
     }
 
     // #[test]
     // fn dot_basics() {
-    //     let u = Vector::from(&[0., 0.]);
-    //     let v = Vector::from(&[1., 1.]);
+    //     let u = Vector::from([0., 0.]);
+    //     let v = Vector::from([1., 1.]);
     //     assert_eq!(0.0, u.dot(v));
-    //     let u = Vector::from(&[1., 1.]);
-    //     let v = Vector::from(&[1., 1.]);
+    //     let u = Vector::from([1., 1.]);
+    //     let v = Vector::from([1., 1.]);
     //     assert_eq!(2., u.dot(v));
-    //     let u = Vector::from(&[-1., 6.]);
-    //     let v = Vector::from(&[3., 2.]);
+    //     let u = Vector::from([-1., 6.]);
+    //     let v = Vector::from([3., 2.]);
     //     assert_eq!(9., u.dot(v));
     // }
     //
     // #[test]
     // fn dot_more() {
-    //     let u = Vector::from(&[0, 0]);
-    //     let v = Vector::from(&[0, 0]);
+    //     let u = Vector::from([0, 0]);
+    //     let v = Vector::from([0, 0]);
     //     assert_eq!(0, u.dot(v));
     //
-    //     let u = Vector::from(&[1, 0]);
-    //     let v = Vector::from(&[0, 0]);
+    //     let u = Vector::from([1, 0]);
+    //     let v = Vector::from([0, 0]);
     //     assert_eq!(0, u.dot(v));
     //
-    //     let u = Vector::from(&[1, 0]);
-    //     let v = Vector::from(&[1, 0]);
+    //     let u = Vector::from([1, 0]);
+    //     let v = Vector::from([1, 0]);
     //     assert_eq!(1, u.dot(v));
     //
-    //     let u = Vector::from(&[1, 0]);
-    //     let v = Vector::from(&[0, 1]);
+    //     let u = Vector::from([1, 0]);
+    //     let v = Vector::from([0, 1]);
     //     assert_eq!(0, u.dot(v));
     //
-    //     let u = Vector::from(&[1, 1]);
-    //     let v = Vector::from(&[1, 1]);
+    //     let u = Vector::from([1, 1]);
+    //     let v = Vector::from([1, 1]);
     //     assert_eq!(2, u.dot(v));
     //
-    //     let u = Vector::from(&[4, 2]);
-    //     let v = Vector::from(&[2, 1]);
+    //     let u = Vector::from([4, 2]);
+    //     let v = Vector::from([2, 1]);
     //     assert_eq!(10, u.dot(v));
     // }
     //
     // #[test]
     // fn norms_test_basics() {
-    //     let u = Vector::from(&[0., 0., 0.]);
+    //     let u = Vector::from([0., 0., 0.]);
     //     assert_eq!(u.norm_1(), 0.0);
     //     assert_eq!(u.norm(), 0.0);
     //     assert_eq!(u.norm_inf(), 0.0);
     //
-    //     let u = Vector::from(&[1., 2., 3.]);
+    //     let u = Vector::from([1., 2., 3.]);
     //     assert_eq!(u.norm_1(), 6.0);
     //     assert_eq!(u.norm(), 3.7416573);
     //     assert_eq!(u.norm_inf(), 3.);
     //
-    //     let u = Vector::from(&[-1., -2.]);
+    //     let u = Vector::from([-1., -2.]);
     //     assert_eq!(u.norm_1(), 3.0);
     //     assert_eq!(u.norm(), 2.236067977);
     //     assert_eq!(u.norm_inf(), 2.);
@@ -276,37 +276,37 @@ mod tests {
     //
     // #[test]
     // fn norms_test_hards() {
-    //     let u = Vector::from(&[0.]);
+    //     let u = Vector::from([0.]);
     //     assert_eq!(u.norm_1(), 0.);
     //     assert_eq!(u.norm(), 0.);
     //     assert_eq!(u.norm_inf(), 0.);
     //
-    //     let u = Vector::from(&[1.]);
+    //     let u = Vector::from([1.]);
     //     assert_eq!(u.norm_1(), 1.);
     //     assert_eq!(u.norm(), 1.);
     //     assert_eq!(u.norm_inf(), 1.);
     //
-    //     let u = Vector::from(&[0., 0.]);
+    //     let u = Vector::from([0., 0.]);
     //     assert_eq!(u.norm_1(), 0.);
     //     assert_eq!(u.norm(), 0.);
     //     assert_eq!(u.norm_inf(), 0.);
     //
-    //     let u = Vector::from(&[1., 0.]);
+    //     let u = Vector::from([1., 0.]);
     //     assert_eq!(u.norm_1(), 1.);
     //     assert_eq!(u.norm(), 1.);
     //     assert_eq!(u.norm_inf(), 1.);
     //
-    //     let u = Vector::from(&[2., 1.]);
+    //     let u = Vector::from([2., 1.]);
     //     assert_eq!(u.norm_1(), 3.);
     //     assert_eq!(u.norm(), 2.236067977);
     //     assert_eq!(u.norm_inf(), 2.);
     //
-    //     let u = Vector::from(&[4., 2.]);
+    //     let u = Vector::from([4., 2.]);
     //     assert_eq!(u.norm_1(), 6.);
     //     assert_eq!(u.norm(), 4.472135955);
     //     assert_eq!(u.norm_inf(), 4.);
     //
-    //     let u = Vector::from(&[-4., -2.]);
+    //     let u = Vector::from([-4., -2.]);
     //     assert_eq!(u.norm_1(), 6.);
     //     assert_eq!(u.norm(), 4.472135955);
     //     assert_eq!(u.norm_inf(), 4.);
