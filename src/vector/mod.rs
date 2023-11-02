@@ -1,7 +1,8 @@
+use core::fmt;
 // use core::ops;
 use std::{
-    fmt::Debug,
-    ops::{AddAssign, MulAssign, SubAssign},
+    fmt::{Debug, Display},
+    ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
 };
 
 #[derive(Clone, Debug)]
@@ -84,6 +85,48 @@ where
     }
 }
 
+impl<K> Add<Vector<K>> for Vector<K>
+where
+    K: AddAssign + Add<Output = K> + Copy, // or whatever bounds you need
+{
+    type Output = Self;
+
+    fn add(mut self, rhs: Self) -> Self::Output {
+        for (e_self, e_rhs) in self.e.iter_mut().zip(rhs.e.iter()) {
+            *e_self += *e_rhs;
+        }
+        self
+    }
+}
+
+impl<K> Sub<Vector<K>> for Vector<K>
+where
+    K: SubAssign + Copy, // or whatever bounds you need
+{
+    type Output = Self;
+
+    fn sub(mut self, rhs: Self) -> Self::Output {
+        for (e_self, e_rhs) in self.e.iter_mut().zip(rhs.e.iter()) {
+            *e_self -= *e_rhs;
+        }
+        self
+    }
+}
+
+impl<K> Mul<K> for Vector<K>
+where
+    K: MulAssign + Copy, // or whatever bounds you need
+{
+    type Output = Self;
+
+    fn mul(mut self, rhs: K) -> Self::Output {
+        for e in &mut self.e {
+            *e *= rhs;
+        }
+        self
+    }
+}
+
 impl<K> Vector<K> {
     pub fn new(e: Vec<K>) -> Self {
         Self { e }
@@ -133,7 +176,7 @@ impl<K> Vector<K> {
     where
         K: MulAssign + Copy,
     {
-        *self *= &a;
+        *self *= a;
     }
 }
 
@@ -162,16 +205,25 @@ where
     }
 }
 
+impl<K: Debug> Display for Vector<K> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let buffer: String = self.e.iter().map(|col| format!("[{:?}]\n", col)).collect();
+        write!(f, "{}", buffer)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn vector_util() {
-        let u = Vector::from([1., 2.]);
+        let mut u = Vector::from([1., 2.]);
         let v = Vector::from(vec![3., 4.]);
         v.display();
-        let x = Vector::from(v);
+        u = u.sub(v);
+        u.display();
+        // let x = Vector::from(v);
         // v.display();  -- [ERROR] because what 'from()' does is shallow copying, 'clone' does deep copying
         u.display();
         x.display();
