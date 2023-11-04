@@ -47,8 +47,8 @@ where
     K: MulAssign + Copy,
 {
     fn mul_assign(&mut self, rhs: K) {
-        let lambda = K::from(rhs);
-        self.e.iter_mut().for_each(|e| *e *= lambda);
+        let scalar = K::from(rhs);
+        self.e.iter_mut().for_each(|e| *e *= scalar);
     }
 }
 
@@ -90,12 +90,12 @@ where
     K: AddAssign + Add<Output = K> + Copy, // or whatever bounds you need
 {
     type Output = Self;
-
-    fn add(mut self, rhs: Self) -> Self::Output {
-        for (e_self, e_rhs) in self.e.iter_mut().zip(rhs.e.iter()) {
-            *e_self += *e_rhs;
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut vec = self.clone();
+        for (p1, p2) in vec.e.iter_mut().zip(rhs.e.iter()) {
+            *p1 += *p2;
         }
-        self
+        vec
     }
 }
 
@@ -105,11 +105,12 @@ where
 {
     type Output = Self;
 
-    fn sub(mut self, rhs: Self) -> Self::Output {
-        for (e_self, e_rhs) in self.e.iter_mut().zip(rhs.e.iter()) {
-            *e_self -= *e_rhs;
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut vec = self.clone();
+        for (p1, p2) in vec.e.iter_mut().zip(rhs.e.iter()) {
+            *p1 -= *p2;
         }
-        self
+        vec
     }
 }
 
@@ -119,11 +120,12 @@ where
 {
     type Output = Self;
 
-    fn mul(mut self, rhs: K) -> Self::Output {
-        for e in &mut self.e {
+    fn mul(self, rhs: K) -> Self::Output {
+        let mut vec = self.clone();
+        for e in &mut vec.e {
             *e *= rhs;
         }
-        self
+        vec
     }
 }
 
@@ -157,21 +159,21 @@ impl<K> Vector<K> {
     pub fn size(&self) -> usize {
         self.e.len()
     }
-
-    pub fn add(&mut self, v: &Vector<K>)
+    // MANDATORY -- ex00
+    pub fn add_mut(&mut self, v: &Vector<K>)
     where
         K: AddAssign + Copy,
     {
         *self += v;
     }
-
-    pub fn sub(&mut self, v: &Vector<K>)
+    // MANDATORY -- ex00
+    pub fn sub_mut(&mut self, v: &Vector<K>)
     where
         K: SubAssign + Copy,
     {
         *self -= v;
     }
-
+    // MANDATORY -- ex00
     pub fn scl(&mut self, a: K)
     where
         K: MulAssign + Copy,
@@ -221,7 +223,7 @@ mod tests {
         let mut u = Vector::from([1., 2.]);
         let v = Vector::from(vec![3., 4.]);
         v.display();
-        u = u.sub(v);
+        let x = u.clone().sub(v);
         u.display();
         // let x = Vector::from(v);
         // v.display();  -- [ERROR] because what 'from()' does is shallow copying, 'clone' does deep copying

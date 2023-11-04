@@ -8,6 +8,7 @@ pub use crate::vector::Vector;
 mod matrix;
 mod vector;
 
+#[allow(dead_code)]
 fn linear_combination<K>(u: &[Vector<K>], coefs: &[K]) -> Vector<K>
 where
     K: MulAssign + AddAssign + Copy + Clone + Default,
@@ -19,17 +20,19 @@ where
         .zip(coefs.iter())
         .for_each(|(v, &coef)| {
             v.scl(coef);
-            result.add(v);
+            result.add_mut(v);
         });
     result
 }
 
 // linear interpolation
+#[allow(dead_code)]
 fn lerp<V>(u: V, v: V, t: f32) -> V
 where
     V: Add<Output = V> + Sub<Output = V> + Mul<f32, Output = V>,
 {
-    u * (1.0 - t) + v * t
+    let factor = 1.0 - t;
+    u * factor + v * t
 }
 
 #[cfg(test)]
