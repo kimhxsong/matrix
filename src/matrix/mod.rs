@@ -62,68 +62,6 @@ where
     }
 }
 
-impl<K> Matrix<K> {
-    pub fn new(m: Vector<Vector<K>>) -> Self {
-        Self { m }
-    }
-
-    pub fn shape(&self) -> (usize, usize) {
-        (self.m.size(), self.m.e.first().map_or(0, Vector::size))
-    }
-
-    // MANDATORY -- ex00
-    pub fn add_mut(&mut self, other: &Matrix<K>)
-    where
-        K: AddAssign + Copy,
-    {
-        assert_eq!(self.shape(), other.shape());
-        self.m
-            .e
-            .iter_mut()
-            .zip(&other.m.e)
-            .for_each(|(a, b)| a.add_mut(b));
-    }
-    // MANDATORY -- ex00
-    pub fn sub_mut(&mut self, other: &Matrix<K>)
-    where
-        K: SubAssign + Copy,
-    {
-        assert_eq!(self.shape(), other.shape());
-        self.m
-            .e
-            .iter_mut()
-            .zip(&other.m.e)
-            .for_each(|(a, b)| a.sub_mut(b));
-    }
-
-    // MANDATORY -- ex00
-    pub fn scl(&mut self, a: K)
-    where
-        K: MulAssign + Copy,
-    {
-        self.m.e.iter_mut().for_each(|col| col.scl(a));
-    }
-
-    pub fn display(&self)
-    where
-        K: Debug + Display,
-    {
-        println!("{}", self);
-    }
-
-    pub fn m(&self) -> &Vector<Vector<K>> {
-        &self.m
-    }
-
-    pub fn m_mut(&mut self) -> &mut Vector<Vector<K>> {
-        &mut self.m
-    }
-
-    pub fn set_m(&mut self, m: Vector<Vector<K>>) {
-        self.m = m;
-    }
-}
-
 impl<K> From<Vec<Vec<K>>> for Matrix<K>
 where
     K: Copy + Clone,
@@ -222,6 +160,68 @@ where
     }
 }
 
+impl<K> Matrix<K> {
+    pub fn new(m: Vector<Vector<K>>) -> Self {
+        Self { m }
+    }
+
+    pub fn shape(&self) -> (usize, usize) {
+        (self.m.size(), self.m.e.first().map_or(0, Vector::size))
+    }
+
+    // MANDATORY -- ex00
+    pub fn add_mut(&mut self, other: &Matrix<K>)
+    where
+        K: AddAssign + Copy,
+    {
+        assert_eq!(self.shape(), other.shape());
+        self.m
+            .e
+            .iter_mut()
+            .zip(&other.m.e)
+            .for_each(|(a, b)| a.add_mut(b));
+    }
+
+    pub fn sub_mut(&mut self, other: &Matrix<K>)
+    where
+        K: SubAssign + Copy,
+    {
+        assert_eq!(self.shape(), other.shape());
+        self.m
+            .e
+            .iter_mut()
+            .zip(&other.m.e)
+            .for_each(|(a, b)| a.sub_mut(b));
+    }
+
+    pub fn scl(&mut self, a: K)
+    where
+        K: MulAssign + Copy,
+    {
+        self.m.e.iter_mut().for_each(|col| col.scl(a));
+    }
+    // END of ex00
+
+    pub fn display(&self)
+    where
+        K: Debug + Display,
+    {
+        println!("{}", self);
+    }
+
+    pub fn m(&self) -> &Vector<Vector<K>> {
+        &self.m
+    }
+
+    pub fn m_mut(&mut self) -> &mut Vector<Vector<K>> {
+        &mut self.m
+    }
+
+    pub fn set_m(&mut self, m: Vector<Vector<K>>) {
+        self.m = m;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -299,7 +299,6 @@ mod tests {
         assert_eq!(Vec::from([0., 0.]), u[1].e);
     }
 
-    //
     #[test]
     fn matrix_scale() {
         let mut u = Matrix::from([[1., 1.], [1., 1.]]);
