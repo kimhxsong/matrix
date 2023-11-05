@@ -18,7 +18,7 @@ impl<K: std::ops::Deref> std::ops::Deref for Vector<K> {
     }
 }
 
-impl<K> AddAssign<Vector<K>> for Vector<K>
+impl<K> AddAssign for Vector<K>
 where
     K: AddAssign + Copy,
 {
@@ -30,7 +30,7 @@ where
     }
 }
 
-impl<K> SubAssign<Vector<K>> for Vector<K>
+impl<K> SubAssign for Vector<K>
 where
     K: SubAssign + Copy,
 {
@@ -52,40 +52,7 @@ where
     }
 }
 
-impl<K> AddAssign<&Vector<K>> for Vector<K>
-where
-    K: AddAssign + Copy,
-{
-    fn add_assign(&mut self, rhs: &Vector<K>) {
-        self.e
-            .iter_mut()
-            .zip(rhs.e.iter())
-            .for_each(|(a, b)| *a += *b);
-    }
-}
-
-impl<K> SubAssign<&Vector<K>> for Vector<K>
-where
-    K: SubAssign + Copy,
-{
-    fn sub_assign(&mut self, rhs: &Vector<K>) {
-        self.e
-            .iter_mut()
-            .zip(rhs.e.iter())
-            .for_each(|(a, b)| *a -= *b);
-    }
-}
-
-impl<K> MulAssign<&K> for Vector<K>
-where
-    K: MulAssign + Copy,
-{
-    fn mul_assign(&mut self, rhs: &K) {
-        self.e.iter_mut().for_each(|e| *e *= *rhs);
-    }
-}
-
-impl<K> Add<Vector<K>> for Vector<K>
+impl<K> Add for Vector<K>
 where
     K: AddAssign + Add<Output = K> + Copy, // or whatever bounds you need
 {
@@ -99,7 +66,8 @@ where
     }
 }
 
-impl<K> Sub<Vector<K>> for Vector<K>
+impl<K> Sub for Vector<K>
+// Sub := Sub<Vector<K>>
 where
     K: SubAssign + Copy, // or whatever bounds you need
 {
@@ -138,7 +106,7 @@ impl<K> Vector<K> {
     where
         K: Debug,
     {
-        println!("{:?}", self.e);
+        println!("{}", self);
     }
 
     // getter
@@ -164,14 +132,14 @@ impl<K> Vector<K> {
     where
         K: AddAssign + Copy,
     {
-        *self += v;
+        *self += v.clone();
     }
     // MANDATORY -- ex00
     pub fn sub_mut(&mut self, v: &Vector<K>)
     where
         K: SubAssign + Copy,
     {
-        *self -= v;
+        *self -= v.clone();
     }
     // MANDATORY -- ex00
     pub fn scl(&mut self, a: K)
@@ -209,8 +177,12 @@ where
 
 impl<K: Debug> Display for Vector<K> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let buffer: String = self.e.iter().map(|col| format!("[{:?}]\n", col)).collect();
-        write!(f, "{}", buffer)
+        Ok(for (i, col) in self.e.iter().enumerate() {
+            write!(f, "[{:?}]", col)?;
+            if i < self.e.len() - 1 {
+                write!(f, "\n")?;
+            }
+        })
     }
 }
 
@@ -219,55 +191,76 @@ mod tests {
     use super::*;
 
     #[test]
-    fn vector_util() {
+    fn vector_utils() {
+        let u = Vector::from([1., 2., 3., 4.]);
+
+        u.display();
+        println!("{}", u);
+        println!("{:?}", u);
+        println!("{:#?}", u);
+
+        assert_eq!(4, u.size());
+    }
+
+    #[test]
+    fn vector_add() {
         let mut u = Vector::from([1., 2.]);
-        let v = Vector::from(vec![3., 4.]);
-        v.display();
-        let x = u.clone().sub(v);
-        u.display();
-        // let x = Vector::from(v);
-        // v.display();  -- [ERROR] because what 'from()' does is shallow copying, 'clone' does deep copying
-        u.display();
-        x.display();
+        let v = Vector::from([7., 4.]);
+        u.add_mut(&v);
+        assert_eq!(Vec::from([8.0, 6.0]), u.e);
 
-        let mut y = Vector::clone(&x); // 기본적으로 정의되는 함수를 사용하고 싶다면 Struct에 Derived 에 원하는 Trait을 추가해주면 된다.
-        y.display();
+        let mut u = Vector::from([1., 2.]);
+        let v = Vector::from([7., 4.]);
+        u = u.add(v);
+        assert_eq!(Vec::from([8.0, 6.0]), u.e);
 
-        y += x;
-        y.display();
-        y -= u;
-        y.display();
-        // y *= &3.;
-        // y.display();
-        y *= 4.;
-        y.display();
+        let mut u = Vector::from([1., 2.]);
+        let v = Vector::from([7., 4.]);
+        u = u + v;
+        assert_eq!(Vec::from([8.0, 6.0]), u.e);
+
+        let mut u = Vector::from([1., 2.]);
+        let v = Vector::from([7., 4.]);
+        u += v;
+        assert_eq!(Vec::from([8.0, 6.0]), u.e);
+    }
+
+    #[test]
+    fn vector_sub() {
+        let mut u = Vector::from([1., 2.]);
+        let v = Vector::from([7., 4.]);
+        u.sub_mut(&v);
+        assert_eq!(Vec::from([-6., -2.]), u.e);
+
+        let mut u = Vector::from([1., 2.]);
+        let v = Vector::from([7., 4.]);
+        u = u.sub(v);
+        assert_eq!(Vec::from([-6., -2.]), u.e);
+
+        let mut u = Vector::from([1., 2.]);
+        let v = Vector::from([7., 4.]);
+        u = u - v;
+        assert_eq!(Vec::from([-6., -2.]), u.e);
+
+        let mut u = Vector::from([1., 2.]);
+        let v = Vector::from([7., 4.]);
+        u -= v;
+        assert_eq!(Vec::from([-6., -2.]), u.e);
     }
 
     #[test]
     fn vector_scale() {
-        let mut u = Vector::from([2., 3.]);
-        u.scl(2.);
-        assert_eq!(vec![4.0, 6.0], u.e);
+        let mut u = Vector::from([1., 1.]);
+        u.scl(42.);
+        assert_eq!(Vec::from([42., 42.]), u.e);
 
-        let mut u = Vector::from([0, 0]);
-        u.scl(1);
-        assert_eq!(vec![0, 0], u.e);
+        let mut u = Vector::from([1., 1.]);
+        u *= 42.;
+        assert_eq!(Vec::from([42., 42.]), u.e);
 
-        let mut u = Vector::from([1, 0]);
-        u.scl(1);
-        assert_eq!(vec![1, 0], u.e);
-
-        let mut u = Vector::from([1, 1]);
-        u.scl(2);
-        assert_eq!(vec![2, 2], u.e);
-
-        let mut u = Vector::from([21, 21]);
-        u.scl(2);
-        assert_eq!(vec![42, 42], u.e);
-
-        let mut u = Vector::from([42., 42.]);
-        u.scl(0.5);
-        assert_eq!(vec![21., 21.], u.e);
+        let mut u = Vector::from([1., 1.]);
+        u = u * 42.;
+        assert_eq!(Vec::from([42., 42.]), u.e);
     }
 
     // #[test]

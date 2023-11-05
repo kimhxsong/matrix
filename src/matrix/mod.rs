@@ -17,7 +17,7 @@ impl<K: std::ops::Deref> std::ops::Deref for Matrix<K> {
     }
 }
 
-impl<K> Add<Matrix<K>> for Matrix<K>
+impl<K> Add for Matrix<K>
 where
     K: AddAssign + Add<Output = K> + Copy, // or whatever bounds you need
 {
@@ -32,7 +32,7 @@ where
     }
 }
 
-impl<K> Sub<Matrix<K>> for Matrix<K>
+impl<K> Sub for Matrix<K>
 where
     K: SubAssign + Sub<Output = K> + Copy, // or whatever bounds you need
 {
@@ -106,9 +106,9 @@ impl<K> Matrix<K> {
 
     pub fn display(&self)
     where
-        K: Debug,
+        K: Debug + Display,
     {
-        println!("{:?}", self.m);
+        println!("{}", self);
     }
 
     pub fn m(&self) -> &Vector<Vector<K>> {
@@ -152,10 +152,25 @@ where
     }
 }
 
-impl<K: Debug> Display for Matrix<K> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let buffer: String = self.m.e.iter().map(|col| format!("{:?}\n", col)).collect();
-        write!(f, "{}", buffer)
+impl<K> Display for Matrix<K>
+where
+    K: Debug + Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (i, v) in self.m.e.iter().enumerate() {
+            write!(f, "[")?;
+            for (j, element) in v.e.iter().enumerate() {
+                if j != 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{:.1}", element)?;
+            }
+            write!(f, "]")?;
+            if i < self.m.e.len() - 1 {
+                write!(f, "\n")?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -213,7 +228,7 @@ mod tests {
 
     #[test]
     fn matrix_utils() {
-        let u = Matrix::from([[1., 2.], [3., 4.]]);
+        let u = Matrix::from([[1.2, 2.], [3., 4.]]);
         let v = Matrix::from([[7., 4.], [-2., 2.]]);
 
         u.display();
@@ -235,78 +250,72 @@ mod tests {
         let mut u = Matrix::from([[1., 2.], [3., 4.]]);
         let v = Matrix::from([[7., 4.], [-2., 2.]]);
         u.add_mut(&v);
-        u = u.add(v);
-        // assert_eq!(Vec::from([8.0, 6.0]), u[0].e);
-        // assert_eq!(Vec::from([1.0, 6.0]), u[1].e);
+        assert_eq!(Vec::from([8.0, 6.0]), u[0].e);
+        assert_eq!(Vec::from([1.0, 6.0]), u[1].e);
 
-        let mut u = Matrix::from([[0, 0], [0, 0]]);
-        let v = Matrix::from([[0, 0], [0, 0]]);
-        u += v;
-        // assert_eq!(Vec::from([0, 0]), u[0].e);
-        // assert_eq!(Vec::from([0, 0]), u[1].e);
-
-        let u = Matrix::from([[1., 2.], [3., 4.]]);
+        let mut u = Matrix::from([[1., 2.], [3., 4.]]);
         let v = Matrix::from([[7., 4.], [-2., 2.]]);
-        let z = u + v;
-        // assert_eq!(Vec::from([8.0, 6.0]), z[0].e);
-        // assert_eq!(Vec::from([1.0, 6.0]), z[1].e);
+        u = u.add(v);
+        assert_eq!(Vec::from([8.0, 6.0]), u[0].e);
+        assert_eq!(Vec::from([1.0, 6.0]), u[1].e);
+
+        let mut u = Matrix::from([[1., 2.], [3., 4.]]);
+        let v = Matrix::from([[7., 4.], [-2., 2.]]);
+        u = u + v;
+        assert_eq!(Vec::from([8.0, 6.0]), u[0].e);
+        assert_eq!(Vec::from([1.0, 6.0]), u[1].e);
+
+        let mut u = Matrix::from([[1., 2.], [3., 4.]]);
+        let v = Matrix::from([[7., 4.], [-2., 2.]]);
+        u += v;
+        assert_eq!(Vec::from([8.0, 6.0]), u[0].e);
+        assert_eq!(Vec::from([1.0, 6.0]), u[1].e);
     }
 
-    // #[test]
-    // fn matrix_sub() {
-    //     let mut u = Matrix::from([[1., 2.], [3., 4.]]);
-    //     let v = Matrix::from([[7., 4.], [-2., 2.]]);
-    //     u.sub(&v);
-    //     assert_eq!(Vec::from([-6.0, -2.0]), u[0].e);
-    //     assert_eq!(Vec::from([5.0, 2.0]), u[1].e);
+    #[test]
+    fn matrix_sub() {
+        let mut u = Matrix::from([[1., 1.], [1., 1.]]);
+        let v = Matrix::from([[1., 1.], [1., 1.]]);
+        u.sub_mut(&v);
+        assert_eq!(Vec::from([0., 0.]), u[0].e);
+        assert_eq!(Vec::from([0., 0.]), u[1].e);
 
-    //     let mut u = Matrix::from([[0, 0], [0, 0]]);
-    //     let v = Matrix::from([[0, 0], [0, 0]]);
-    //     u.sub(&v);
-    //     assert_eq!(Vec::from([0, 0]), u[0].e);
-    //     assert_eq!(Vec::from([0, 0]), u[1].e);
+        let mut u = Matrix::from([[1., 1.], [1., 1.]]);
+        let v = Matrix::from([[1., 1.], [1., 1.]]);
+        u = u.sub(v);
+        assert_eq!(Vec::from([0., 0.]), u[0].e);
+        assert_eq!(Vec::from([0., 0.]), u[1].e);
 
-    //     let mut u = Matrix::from([[1, 0], [0, 1]]);
-    //     let v = Matrix::from([[0, 0], [0, 0]]);
-    //     u.sub(&v);
-    //     assert_eq!(Vec::from([1, 0]), u[0].e);
-    //     assert_eq!(Vec::from([0, 1]), u[1].e);
+        let mut u = Matrix::from([[1., 1.], [1., 1.]]);
+        let v = Matrix::from([[1., 1.], [1., 1.]]);
+        u = u - v;
+        assert_eq!(Vec::from([0., 0.]), u[0].e);
+        assert_eq!(Vec::from([0., 0.]), u[1].e);
 
-    //     let mut u = Matrix::from([[1, 1], [1, 1]]);
-    //     let v = Matrix::from([[1, 1], [1, 1]]);
-    //     u.sub(&v);
-    //     assert_eq!(Vec::from([0, 0]), u[0].e);
-    //     assert_eq!(Vec::from([0, 0]), u[1].e);
-
-    //     let mut u = Matrix::from([[21, 21], [21, 21]]);
-    //     let v = Matrix::from([[21, 21], [21, 21]]);
-    //     u.sub(&v);
-    //     assert_eq!(Vec::from([0, 0]), u[0].e);
-    //     assert_eq!(Vec::from([0, 0]), u[1].e);
-    // }
+        let mut u = Matrix::from([[1., 1.], [1., 1.]]);
+        let v = Matrix::from([[1., 1.], [1., 1.]]);
+        u -= v;
+        assert_eq!(Vec::from([0., 0.]), u[0].e);
+        assert_eq!(Vec::from([0., 0.]), u[1].e);
+    }
 
     //
     #[test]
     fn matrix_scale() {
-        let mut u = Matrix::from([[1., 2.], [3., 4.]]);
-        u.scl(2.);
-        // assert_eq!(Vec::from([2.0, 4.0]), u[0].e);
-        // assert_eq!(Vec::from([6.0, 8.0]), u[1].e);
+        let mut u = Matrix::from([[1., 1.], [1., 1.]]);
+        u.scl(42.);
+        assert_eq!(Vec::from([42., 42.]), u[0].e);
+        assert_eq!(Vec::from([42., 42.]), u[1].e);
 
-        let mut u = Matrix::from([[1, 0], [0, 1]]);
-        u.scl(1);
-        // assert_eq!(Vec::from([1, 0]), u[0].e);
-        // assert_eq!(Vec::from([0, 1]), u[1].e);
+        let mut u = Matrix::from([[1., 1.], [1., 1.]]);
+        u *= 42.;
+        assert_eq!(Vec::from([42., 42.]), u[0].e);
+        assert_eq!(Vec::from([42., 42.]), u[1].e);
 
-        let mut u = Matrix::from([[1., 2.], [3., 4.]]);
-        u *= 2.;
-        // assert_eq!(Vec::from([2., 4.]), u[0].e);
-        // assert_eq!(Vec::from([6., 8.]), u[1].e);
-
-        let mut v = u * 2.;
-        v.scl(2.);
-        // assert_eq!(Vec::from([10.5, 10.5]), v[0].e);
-        // assert_eq!(Vec::from([10.5, 10.5]), v[1].e);
+        let mut u = Matrix::from([[1., 1.], [1., 1.]]);
+        u = u * 42.;
+        assert_eq!(Vec::from([42., 42.]), u[0].e);
+        assert_eq!(Vec::from([42., 42.]), u[1].e);
     }
 
     // #[test]
