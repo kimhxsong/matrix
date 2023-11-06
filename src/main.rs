@@ -78,6 +78,22 @@ where
 }
 // END of ex05
 
+// MANDATORY -- ex06
+// NOTE -- If one or both vectors are not 3-dimensional, the behavior is undefined.
+#[allow(dead_code)]
+fn cross_product<K>(u: &Vector<K>, v: &Vector<K>) -> Vector<K>
+where
+    K: Sub<Output = K> + Mul<Output = K> + Copy,
+{
+    assert_eq!(u.size(), 3, "u must be 3-dimensional");
+    assert_eq!(v.size(), 3, "v must be 3-dimensional");
+    let s1 = (u.e[1] * v.e[2]) - (u.e[2] * v.e[1]);
+    let s2 = (u.e[2] * v.e[0]) - (u.e[0] * v.e[2]);
+    let s3 = (u.e[0] * v.e[1]) - (u.e[1] * v.e[0]);
+    Vector::from([s1, s2, s3])
+}
+// END of ex06
+
 #[cfg(test)]
 mod tests {
     use std::f32::EPSILON;

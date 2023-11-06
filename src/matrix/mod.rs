@@ -220,7 +220,52 @@ impl<K> Matrix<K> {
     pub fn set_m(&mut self, m: Vector<Vector<K>>) {
         self.m = m;
     }
+
+    // MANDATORY -- ex07
+    #[allow(dead_code)]
+    fn mul_vec(&mut self, vec: Vector<K>) -> Vector<K>
+    where
+        K: Default + Mul<Output = K> + Copy,
+    {
+        assert!(
+            self.m.size() > 0 && self.m.e[0].size() == vec.size(),
+            "Error"
+        );
+        let mut result = Vector::from(vec![K::default(); self.m.size()]);
+        self.m
+            .e
+            .iter()
+            .zip(result.e.iter_mut())
+            .for_each(|(row, res)| {
+                row.e
+                    .iter()
+                    .zip(vec.e.iter())
+                    .for_each(|(r, c)| *res = *r * *c)
+            });
+        result
+    }
+
+    #[allow(dead_code)]
+    fn mul_mat(&mut self, mat: Matrix<K>) -> Matrix<K>
+    where
+        K: Default + Clone + Mul<Output = K> + AddAssign + Copy,
+    {
+        assert!(
+            self.m.size() > 0 && self.m.e[0].size() == mat.m.size(),
+            "Error"
+        );
+        let mut result = Matrix::from(vec![vec![K::default(); self.m.size()]; mat.m.e[0].size()]);
+        for i in 0..self.m.size() {
+            for j in 0..mat.m.size() {
+                for k in 0..mat.m.e[0].size() {
+                    result[i][k] += self[i][k] * mat[k][j];
+                }
+            }
+        }
+        result
+    }
 }
+// END of ex07
 
 #[cfg(test)]
 mod tests {

@@ -4,7 +4,7 @@ use num_traits::Float;
 
 use std::{
     fmt::{Debug, Display},
-    ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign},
+    ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign},
 };
 
 #[derive(Clone, Debug)]
@@ -150,6 +150,20 @@ where
             *e *= rhs;
         }
         vec
+    }
+}
+
+impl<K> Index<usize> for Vector<K> {
+    type Output = K;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.e[index]
+    }
+}
+
+impl<K> IndexMut<usize> for Vector<K> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.e[index]
     }
 }
 
